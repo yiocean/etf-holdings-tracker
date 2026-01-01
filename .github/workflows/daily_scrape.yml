@@ -1,0 +1,53 @@
+name: Daily ETF Scraper
+
+# Set trigger schedule
+on:
+  schedule:
+    # Runs daily at 10:00 UTC (18:00 Taiwan/CST)
+    - cron: '0 10 * * *'
+  # Allows manual trigger via button click (for testing)
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Important: Grant write permissions to save Excel files back to the repo
+
+jobs:
+  scrape-and-save:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Install uv (your package manager)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # 3. Set up Python environment
+      - name: Set up Python
+        run: uv python install 3.12
+
+      # 4. Install dependencies (reads your pyproject.toml)
+      - name: Install dependencies
+        run: uv sync
+
+      # 5. Run the scraper script
+      - name: Run Scraper
+        run: uv run main.py
+
+      # 6. Commit and push the generated Excel file back to GitHub
+      - name: Commit and Push changes
+        run: |
+          # Configure bot identity
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Add all generated xlsx files
+          git add *.xlsx
+          
+          # Check for new files; only commit if changes exist
+          git commit -m "Auto: Update ETF Data" || exit 0
+          
+          # Push back to repository
+          git push
