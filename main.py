@@ -19,23 +19,40 @@ import sys
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def is_taiwan_trading_day():
+    """使用 FinMind API 檢查是否為交易日"""
     today = datetime.now()
-
+    today_str = today.strftime('%Y-%m-%d')
+    
+    # 週六日直接跳過
     if today.weekday() >= 5:
+        print(f"{today_str} 是週末，非交易日")
         return False
     
     try:
-        date_str = today.strftime('%Y%m%d')
-        url = f"https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date={date_str}&type=ALL"
-        response = requests.get(url, timeout=10)
+        # FinMind API - 查詢台灣交易日曆
+        url = "https://api.finmindtrade.com/api/v4/data"
+        params = {
+            "dataset": "TaiwanStockInfo",
+            "data_id": "2330",  # 使用台積電作為代表
+            "start_date": today_str,
+            "end_date": today_str
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
         
         if response.status_code == 200:
             data = response.json()
-            return 'stat' in data and data['stat'] == 'OK'
-    except:
-        pass
-    
-    return False
+            # 如果有資料代表有開市
+            has_data = len(data.get('data', [])) > 0
+            print(f"FinMind API: {today_str} {'是' if has_data else '非'}交易日")
+            return has_data
+        else:
+            print(f"API 請求失敗：HTTP {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"檢查交易日時發生錯誤：{e}")
+        return False
 
 def get_previous_data(current_dir, target_folder, etf_code):
     """
