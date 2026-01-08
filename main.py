@@ -12,6 +12,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
+from datetime import date
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -114,11 +115,11 @@ def fetch_stock_prices(stock_codes, target_date_str, etf_code=''):
                             
                             if not hist.empty:
                                 price = hist['Close'].iloc[-1]  # Get the last available price
-                                price_map[code] = float(price)
+                                price_map[code] = round(float(price), 2)
                                 if days_back > 0:
-                                    print(f"[INFO] {code} ({yf_ticker}): {price:.2f} (from {try_date_str})")
+                                    print(f"[INFO] {code} ({yf_ticker}): {price_map[code]:.2f} (from {try_date_str})")
                                 else:
-                                    print(f"[INFO] {code} ({yf_ticker}): {price:.2f}")
+                                    print(f"[INFO] {code} ({yf_ticker}): {price_map[code]:.2f}")
                                 price_found = True
                                 break
                         except:
@@ -151,7 +152,7 @@ def fetch_stock_prices(stock_codes, target_date_str, etf_code=''):
                     try:
                         price = closes[ticker]
                         if not pd.isna(price) and price > 0:
-                            price_map[code] = float(price)
+                            price_map[code] = round(float(price), 2)
                     except:
                         pass
         except Exception as e:
@@ -173,7 +174,7 @@ def fetch_stock_prices(stock_codes, target_date_str, etf_code=''):
                         try:
                             price = closes[ticker]
                             if not pd.isna(price) and price > 0:
-                                price_map[code] = float(price)
+                                price_map[code] = round(float(price), 2)
                         except:
                             pass
             except Exception as e:
@@ -302,7 +303,7 @@ def scrape_capital_fund_etf(etf_code, fund_id):
             stocks_data = data['data']['stocks']
             
             net_asset = pcf_data.get('nav', 0)
-            data_date = pcf_data.get('date1', time.strftime("%Y-%m-%d"))
+            data_date = pcf_data.get('date2', time.strftime("%Y-%m-%d"))
             
             print(f"[DATA] Net Asset: {net_asset:,.0f}")
             print(f"[INFO] Data Date: {data_date}")
@@ -860,11 +861,11 @@ def main():
         print("[WARN] 00985A scraping failed")
     
     # Scrape 00986A
-    etf_986a = scrape_00986a_data()
-    if etf_986a:
-        process_etf_data(etf_986a, output_dir)
-    else:
-        print("[WARN] 00986A scraping failed")
+    # etf_986a = scrape_00986a_data()
+    # if etf_986a:
+    #     process_etf_data(etf_986a, output_dir)
+    # else:
+    #     print("[WARN] 00986A scraping failed")
     
     # Scrape 00991A
     etf_991a = scrape_00991a_data()
